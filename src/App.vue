@@ -22,8 +22,13 @@
               :key="`message-${index}`"
             >
               <span v-if="message.owner === 'me'">{{message.text}}</span>
-              <vue-typed-js v-else :strings="[message.text]" cursorChar="" @onComplete="complete">
-                <span class="typing"></span>
+              <vue-typed-js 
+                v-else 
+                :strings="[message.text]"
+                cursorChar=""
+                @onComplete="complete"
+              >
+                <span class="typing" />
               </vue-typed-js>
             </li>
           </ul>
