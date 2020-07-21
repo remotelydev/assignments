@@ -47,7 +47,7 @@
                 @click="send" 
                 color="primary" 
                 dark 
-                :disabled="next === 10"
+                :disabled="next >= 10"
               >
                 {{toChat.length ? 'Send Message' : `Let's chat!`}}
               </v-btn>
