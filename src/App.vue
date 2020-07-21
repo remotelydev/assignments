@@ -6,31 +6,51 @@
       dark
     >
       <div class="d-flex align-center">
-
+        remotelydev chatbot fix
       </div>
 
-      <v-spacer></v-spacer>
+      <v-spacer />
     </v-app-bar>
 
     <v-content>
       <v-container fluid>
         <v-row>
           <ul>
-            <li v-for="(message, index) in messages.slice(0, next)" v-bind:key="index" :class="message.owner">{{message.text}}</li>
+            <li 
+              v-for="(message, index) in toChat"
+              :class="message.owner" 
+              :key="`message-${index}`"
+            >
+              <span v-if="message.owner === 'me'">{{message.text}}</span>
+              <vue-typed-js v-else :strings="[message.text]" cursorChar="" @onComplete="complete">
+                <span class="typing"></span>
+              </vue-typed-js>
+            </li>
           </ul>
         </v-row>
-        <v-row :style="{position: 'absolute', bottom: 0, left: 0, right: 0, padding: '10px', zIndex: 100, background: '#ffffff'}">
+
+        <v-row class="chat-message-row">
           <v-col cols="12" md="12">
             <v-textarea
-                    filled
-                    name="input-7-1"
-                    label="Type your message"
-                    v-model="input"
-            ></v-textarea>
+              filled
+              name="input-7-1"
+              label="Type your message"
+              v-model="input"
+              @keydown.enter="send"
+            />
           </v-col>
           <v-col cols="12" md="12">
             <div class="my-2">
-              <v-btn @click="send" x-large :style="{position: 'absolute', bottom: 0, right: 0, background: '#56c8d8'}" color="primary" dark>Send Message</v-btn>
+              <v-btn 
+                class="chat-button"
+                x-large 
+                @click="send" 
+                color="primary" 
+                dark 
+                :disabled="next === 10"
+              >
+                {{toChat.length ? 'Send Message' : `Let's chat!`}}
+              </v-btn>
             </div>
           </v-col>
         </v-row>
@@ -40,13 +60,10 @@
 </template>
 
 <script>
+import axios from 'axios';
 
 export default {
   name: 'App',
-
-  components: {
-
-  },
 
   data: () => ({
     name: '',
@@ -54,74 +71,49 @@ export default {
     location: '',
     feeling: '',
     hobby: '',
-    next: 0,
+    next: -1,
     input: '',
+    question: '',
     toChat: [],
-    messages: [
-      {
-        text: "Hi, I'm Peter!",
-        owner: 'him'
-      },
-      {
-        text: "What's your name?",
-        ask: "name",
-        owner: 'him'
-      },
-      {
-        text: "Nice to meet you!",
-        owner: 'him'
-      },
-      {
-        text: "How was your day?",
-        ask: "feeling",
-        owner: 'him'
-      },
-      {
-        text: "Where're you from?",
-        ask: "location",
-        owner: 'him'
-      },
-      {
-        text: "Nice!",
-        owner: 'him'
-      },
-      {
-        text: "How old are you?",
-        ask: "age",
-        owner: 'him'
-      },
-      {
-        text: "What's your favorite hobby?",
-        ask: "hobby",
-        owner: 'him'
-      },
-      {
-        text: "Wow, cool",
-      }
-    ]
+    messages: [],
+    active: true
   }),
+  mounted() {
+    axios
+      .get('/messages.json')
+      .then(res => {this.messages = res.data;});
+  },
   methods: {
     send() {
-      let active = true
-      while(active) {
-
-        if (typeof this.messages[this.next].ask === 'undefined') {
-          this.next += 1;
-        } else {
-          this.next += 1;
-          if (this.messages[this.next].ask === 'name') {
-            this.name = this.input
-            this.messages.splice(this.next, 0,{
-              text: this.input,
-              owner: 'me'
-            })
-          }
-          active = false;
-        }
+      if(!this.active) return
+      this.active = false;
+      this.toChat.push({
+        text: this.input,
+        owner: 'me'
+      })
+      if(this.question) {
+        this[this.question] = this.input;
       }
+      this.input = '';
+
+      this.next += 1;
+    },
+    complete() {
+      if (typeof this.messages[this.next].ask === 'undefined') {
+        this.question = '';
+        this.next += 1;
+      } else {
+        this.question = this.messages[this.next].ask;
+      }
+      this.active = true;
+    }
+  },
+  watch: {
+    next() {
+      this.toChat.push(this.messages[this.next])
     }
   }
-};
+}
 </script>
 
 <style>
@@ -145,6 +137,21 @@ export default {
     border-radius: 30px;
     margin-bottom: 2px;
     font-family: Helvetica, Arial, sans-serif;
+  }
+
+  .chat-message-row {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 10px;
+    z-index: 100;
+    background: #ffffff;
+  }
+  .chat-button {
+    position: absolute !important;
+    bottom: 0;
+    right: 0;
   }
 
   .him{
